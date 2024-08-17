@@ -319,7 +319,8 @@ impl Interpreter {
         for (i, byte) in draw_bytes.into_iter().enumerate() {
             let coord = (y as usize + i) % Window::HEIGHT;
             let original = frame_buffer[coord];
-            let res = original ^ (byte as u64).rotate_right(x as u32);
+            // shift an addiontal 8 bits, so the byte is moved to the beginning
+            let res = original ^ (byte as u64).rotate_right(x as u32 + 8);
             // check if any bits where erased (set to 0)
             self.registers[REG_VF] = ((original & !res) != 0) as u8;
             frame_buffer[coord] = res;
