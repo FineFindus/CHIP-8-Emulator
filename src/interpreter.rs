@@ -293,14 +293,14 @@ impl Interpreter {
             Instruction::LdIVx(reg) => {
                 self.registers
                     .into_iter()
-                    .take(reg.into())
+                    .take(reg as usize + 1)
                     .enumerate()
                     .for_each(|(i, reg)| {
                         self.write_bytes((self.address_register as usize) + i, &[reg])
                     });
             }
             Instruction::LdVxI(reg) => {
-                for i in 0..(reg as usize) {
+                for i in 0..=(reg as usize) {
                     self.registers[i] =
                         *self.read_byte(self.address_register as usize + i).unwrap();
                 }
