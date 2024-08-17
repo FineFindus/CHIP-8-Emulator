@@ -1,6 +1,7 @@
 use std::{
     fmt::Write,
     sync::{Arc, RwLock},
+    time::{Duration, Instant},
 };
 
 use crate::{instruction::Instruction, window::Window};
@@ -89,6 +90,11 @@ impl Interpreter {
     /// Executes the current program in memory.
     pub fn execute(&mut self) -> Result<(), String> {
         self.window.spawn();
+
+        // rate at which timer/sound are decreased. Repsondeds to 60Hz, ~16.67ms
+        let timer_cycle: Duration = Duration::from_secs_f64(1.0 / 60.0);
+        let mut timer_clock = Instant::now();
+
         loop {
             // fetch next instruction
             let instruction_bytes = self
@@ -106,6 +112,13 @@ impl Interpreter {
             self.program_counter += 2;
             // TODO: stepdown timer regs
             self.execute_instruction(instruction)?;
+
+            // decrement timer registers
+            if timer_clock.elapsed() >= timer_cycle {
+                self.timer_register = self.timer_register.saturating_sub(1);
+                self.sound_register = self.sound_register.saturating_sub(1);
+                timer_clock = Instant::now();
+            }
 
             if is_draw_call {
                 self.window.queue_draw();
