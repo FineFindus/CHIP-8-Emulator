@@ -284,14 +284,10 @@ impl Interpreter {
                 self.address_register = (self.registers[reg as usize].wrapping_mul(5)) as u16;
             }
             Instruction::LdBVx(reg) => {
-                let mut val = self.registers[reg as usize];
-                let mut i = 0;
-                while val > 0 {
-                    let n = val % 10;
-                    val /= 10;
-                    self.write_bytes(self.address_register as usize + i, &[n]);
-                    i += 1;
-                }
+                let val = self.registers[reg as usize];
+                self.write_bytes(self.address_register as usize, &[(val / 100) % 10]);
+                self.write_bytes(self.address_register as usize + 1, &[(val / 10) % 10]);
+                self.write_bytes(self.address_register as usize + 2, &[val % 10]);
             }
             Instruction::LdIVx(reg) => {
                 self.registers
