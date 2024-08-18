@@ -13,26 +13,6 @@ use sdl2::{
     render::WindowCanvas,
 };
 
-#[derive(Debug, PartialEq, Eq)]
-enum WindowCommand {
-    Draw,
-    WaitKeyPress,
-    IsPressed(u8),
-    Clear,
-    ControlSound(bool),
-}
-
-#[derive(Debug)]
-pub struct Window {
-    /// Fame Buffer of the current window.
-    ///
-    /// Since the interpreter only supports a max width of 64 pixel,
-    /// `u64`s are (mis-)used as bitfields.
-    frame_buffer: Arc<RwLock<[u64; Self::HEIGHT]>>,
-    sender: Option<std::sync::mpsc::Sender<WindowCommand>>,
-    receiver: Option<std::sync::mpsc::Receiver<u8>>,
-}
-
 /// Beep sound.
 ///
 /// This should be played when the sound register is non-zero.
@@ -58,6 +38,25 @@ impl AudioCallback for Beep {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum WindowCommand {
+    Draw,
+    WaitKeyPress,
+    IsPressed(u8),
+    Clear,
+    ControlSound(bool),
+}
+
+#[derive(Debug)]
+pub struct Window {
+    /// Fame Buffer of the current window.
+    ///
+    /// Since the interpreter only supports a max width of 64 pixel,
+    /// `u64`s are (mis-)used as bitfields.
+    frame_buffer: Arc<RwLock<[u64; Self::HEIGHT]>>,
+    sender: Option<std::sync::mpsc::Sender<WindowCommand>>,
+    receiver: Option<std::sync::mpsc::Receiver<u8>>,
+}
 impl Window {
     pub fn new(frame_buffer: Arc<RwLock<[u64; Self::HEIGHT]>>) -> Self {
         Self {
@@ -110,6 +109,8 @@ impl Window {
             return;
         };
         let _ = sender.send(WindowCommand::Draw);
+        // due to waiting for an interupt, the CHIP-8 is limited to 60 fps
+        std::thread::sleep(Duration::from_secs_f64(1.0 / 60.0));
     }
 
     /// Clears the current screen.
@@ -183,12 +184,10 @@ impl Window {
                         channels: Some(1),
                         samples: Some(4096),
                     }),
-                    |spec| {
-                        Beep {
-                            phase_inc: 440.0 / spec.freq as f32,
-                            phase: 0.0,
-                            volume: 0.25,
-                        }
+                    |spec| Beep {
+                        phase_inc: 440.0 / spec.freq as f32,
+                        phase: 0.0,
+                        volume: 0.25,
                     },
                 )
                 .unwrap();
@@ -217,7 +216,10 @@ impl Window {
             loop {
                 match rx.recv_timeout(std::time::Duration::new(0, 1_000_000_000u32 / 30)) {
                     Ok(WindowCommand::Draw) => Self::draw(&frame_buffer, &mut canvas),
-                    Ok(WindowCommand::Clear) => canvas.clear(),
+                    Ok(WindowCommand::Clear) => {
+                        canvas.set_draw_color(Self::COLOR_BACKGROUND);
+                        canvas.clear();
+                    }
                     Ok(WindowCommand::IsPressed(key)) => {
                         respond_tx
                             .send(
