@@ -301,12 +301,14 @@ impl Interpreter {
                     .for_each(|(i, reg)| {
                         self.write_bytes((self.address_register as usize) + i, &[reg])
                     });
+                self.address_register += reg as u16 + 1;
             }
             Instruction::LdVxI(reg) => {
                 for i in 0..=(reg as usize) {
                     self.registers[i] =
                         *self.read_byte(self.address_register as usize + i).unwrap();
                 }
+                self.address_register += reg as u16 + 1;
             }
         };
         Ok(())

@@ -62,7 +62,6 @@ pub enum Instruction {
     ///
     /// If `Vx` > Vy, then VF is set to 1, otherwise 0. Then `Vy` is subtracted from Vx, and the results stored in `Vx`.
     Sub(u8, u8),
-    //TODO: incorrect?
     /// Set `Vx` = `Vx` SHR 1.
     ///
     /// If the least-significant bit of `Vx` is 1, then VF is set to 1, otherwise 0. Then `Vx` is divided by 2.
@@ -71,7 +70,6 @@ pub enum Instruction {
     ///
     /// If `Vy` > Vx, then VF is set to 1, otherwise 0. Then `Vx` is subtracted from Vy, and the results stored in `Vx`.
     Subn(u8, u8),
-    //TODO: incorrect?
     /// Set `Vx` = `Vx` SHL 1.
     ///
     /// If the most-significant bit of `Vx` is 1, then VF is set to 1, otherwise to 0. Then `Vx` is multiplied by 2.
@@ -132,12 +130,10 @@ pub enum Instruction {
     ///
     /// The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.
     LdBVx(u8),
-    //TODO: incorrect?
     /// Store registers `V0` through `Vx` in memory starting at location I.
     ///
     /// The interpreter copies the values of registers `V0` through `Vx` into memory, starting at the address in I.
     LdIVx(u8),
-    //TODO: incorrect?
     /// Read registers `V0` through `Vx` from memory starting at location I.
     ///
     /// The interpreter reads values from memory starting at location I into registers `V0` through `Vx`.
