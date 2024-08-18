@@ -1,6 +1,17 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    sync::{Arc, RwLock},
+    thread::JoinHandle,
+    time::Duration,
+};
 
-use sdl2::{event::Event, keyboard::Scancode, pixels::Color, rect::Rect, render::WindowCanvas};
+use sdl2::{
+    audio::{AudioCallback, AudioSpecDesired},
+    event::Event,
+    keyboard::Scancode,
+    pixels::Color,
+    rect::Rect,
+    render::WindowCanvas,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 enum WindowCommand {
@@ -8,6 +19,7 @@ enum WindowCommand {
     WaitKeyPress,
     IsPressed(u8),
     Clear,
+    ControlSound(bool),
 }
 
 #[derive(Debug)]
@@ -19,6 +31,31 @@ pub struct Window {
     frame_buffer: Arc<RwLock<[u64; Self::HEIGHT]>>,
     sender: Option<std::sync::mpsc::Sender<WindowCommand>>,
     receiver: Option<std::sync::mpsc::Receiver<u8>>,
+}
+
+/// Beep sound.
+///
+/// This should be played when the sound register is non-zero.
+struct Beep {
+    phase_inc: f32,
+    phase: f32,
+    volume: f32,
+}
+
+impl AudioCallback for Beep {
+    type Channel = f32;
+
+    fn callback(&mut self, out: &mut [f32]) {
+        for x in out.iter_mut() {
+            // Generate a simple square wave
+            *x = if self.phase <= 0.5 {
+                self.volume
+            } else {
+                -self.volume
+            };
+            self.phase = (self.phase + self.phase_inc) % 1.0;
+        }
+    }
 }
 
 impl Window {
@@ -81,7 +118,6 @@ impl Window {
             return;
         };
         let _ = sender.send(WindowCommand::Clear);
-        //
         // reset the frame_buffer to 0
         let mut frame_buffer = self.frame_buffer.write().unwrap();
         frame_buffer.fill(0);
@@ -118,6 +154,16 @@ impl Window {
         }
     }
 
+    /// Controls the sound.
+    ///
+    /// If `playing` is set to `true`, a constant beep is emitted.
+    pub fn control_sound(&self, playing: bool) {
+        let Some(sender) = self.sender.as_ref() else {
+            return;
+        };
+        let _ = sender.send(WindowCommand::ControlSound(playing));
+    }
+
     pub fn spawn(&mut self) {
         let (tx, rx) = std::sync::mpsc::channel::<WindowCommand>();
         let (respond_tx, respond_rx) = std::sync::mpsc::channel::<u8>();
@@ -127,6 +173,25 @@ impl Window {
         std::thread::spawn(move || {
             let sdl_context = sdl2::init().unwrap();
             let video_subsystem = sdl_context.video().unwrap();
+            let audio_subsystem = sdl_context.audio().unwrap();
+
+            let audio = audio_subsystem
+                .open_playback(
+                    None,
+                    &(AudioSpecDesired {
+                        freq: Some(44100),
+                        channels: Some(1),
+                        samples: Some(4096),
+                    }),
+                    |spec| {
+                        Beep {
+                            phase_inc: 440.0 / spec.freq as f32,
+                            phase: 0.0,
+                            volume: 0.25,
+                        }
+                    },
+                )
+                .unwrap();
 
             let window = video_subsystem
                 .window(
@@ -166,9 +231,11 @@ impl Window {
                     Ok(WindowCommand::WaitKeyPress) => {
                         wait_for_key = true;
                     }
+                    Ok(WindowCommand::ControlSound(true)) => audio.resume(),
+                    Ok(WindowCommand::ControlSound(false)) => audio.pause(),
                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
                     Err(_err) => {
-                        eprint!("Receiver died; quitting window");
+                        eprintln!("Receiver died; quitting window");
                         return;
                     }
                 };

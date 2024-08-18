@@ -92,7 +92,7 @@ impl Interpreter {
         self.window.spawn();
 
         // rate at which timer/sound are decreased. Repsondeds to 60Hz, ~16.67ms
-        let timer_cycle: Duration = Duration::from_secs_f64(1.0 / 60.0);
+        let timer_cycle = Duration::from_secs_f64(1.0 / 60.0);
         let mut timer_clock = Instant::now();
 
         loop {
@@ -117,6 +117,7 @@ impl Interpreter {
             if timer_clock.elapsed() >= timer_cycle {
                 self.timer_register = self.timer_register.saturating_sub(1);
                 self.sound_register = self.sound_register.saturating_sub(1);
+                self.window.control_sound(self.sound_register > 0);
                 timer_clock = Instant::now();
             }
 
