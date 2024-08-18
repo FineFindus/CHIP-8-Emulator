@@ -1,12 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use sdl2::{
-    event::Event,
-    keyboard::{Keycode, Scancode},
-    pixels::Color,
-    rect::Rect,
-    render::WindowCanvas,
-};
+use sdl2::{event::Event, keyboard::Scancode, pixels::Color, rect::Rect, render::WindowCanvas};
 
 #[derive(Debug, PartialEq, Eq)]
 enum WindowCommand {
@@ -160,7 +154,6 @@ impl Window {
                     Ok(WindowCommand::Draw) => Self::draw(&frame_buffer, &mut canvas),
                     Ok(WindowCommand::Clear) => canvas.clear(),
                     Ok(WindowCommand::IsPressed(key)) => {
-                        //TODO: send key back
                         respond_tx
                             .send(
                                 event_pump
@@ -187,7 +180,6 @@ impl Window {
                             scancode: Some(key),
                             ..
                         } if wait_for_key => {
-                            //TODO: send key back
                             respond_tx
                                 .send(Self::map_scancode(key))
                                 .expect("Failed to send keycode");
@@ -201,20 +193,26 @@ impl Window {
 
     /// Draws the screen based on the cucrrent [`Self::frame_buffer`].
     fn draw(frame_buffer: &Arc<RwLock<[u64; Self::HEIGHT]>>, canvas: &mut WindowCanvas) {
-        let frame_buffer = frame_buffer.write().unwrap();
+        let frame_buffer = frame_buffer.read().unwrap();
+        // clear screen
+        canvas.set_draw_color(Self::COLOR_BACKGROUND);
+        canvas.clear();
+
+        // draw new screen
         canvas.set_draw_color(Self::COLOR_FOREGROUND);
         for y in 0..Self::HEIGHT {
             for x in 0..Self::WIDTH {
-                if (frame_buffer[y] & (1 << x)) != 0 {
-                    canvas
-                        .fill_rect(Rect::new(
-                            (x * Self::SCALE_FACTOR) as i32,
-                            (y * Self::SCALE_FACTOR) as i32,
-                            Self::SCALE_FACTOR as u32,
-                            Self::SCALE_FACTOR as u32,
-                        ))
-                        .expect("Failed to draw rect");
+                if (frame_buffer[y] & (1 << (Self::WIDTH - 1 - x))) == 0 {
+                    continue;
                 }
+                canvas
+                    .fill_rect(Rect::new(
+                        (x * Self::SCALE_FACTOR) as i32,
+                        (y * Self::SCALE_FACTOR) as i32,
+                        Self::SCALE_FACTOR as u32,
+                        Self::SCALE_FACTOR as u32,
+                    ))
+                    .expect("Failed to draw rect");
             }
         }
         canvas.present();
