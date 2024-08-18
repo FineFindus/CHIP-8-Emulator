@@ -216,31 +216,31 @@ impl Interpreter {
             Instruction::AddVxVy(reg_x, reg_y) => {
                 let res = (self.registers[reg_x as usize] as u16)
                     + (self.registers[reg_y as usize] as u16);
-                self.registers[REG_VF] = (res > 255) as u8;
                 // truncate value to last 8 bits
                 self.registers[reg_x as usize] = res as u8;
+                self.registers[REG_VF] = (res > 255) as u8;
             }
             Instruction::Sub(reg_x, reg_y) => {
                 let x = self.registers[reg_x as usize];
                 let y = self.registers[reg_y as usize];
-                self.registers[REG_VF] = (x > y) as u8;
                 self.registers[reg_x as usize] = x.wrapping_sub(y);
+                self.registers[REG_VF] = (x >= y) as u8;
             }
             Instruction::Shr(reg_x, reg_y) => {
-                let le_bit = self.registers[reg_y as usize] & 1;
-                self.registers[REG_VF] = le_bit;
-                self.registers[reg_x as usize] = self.registers[reg_y as usize] >> 1;
+                let y = self.registers[reg_y as usize];
+                self.registers[reg_x as usize] = y >> 1;
+                self.registers[REG_VF] = y & 1;
             }
             Instruction::Subn(reg_x, reg_y) => {
                 let x = self.registers[reg_x as usize];
                 let y = self.registers[reg_y as usize];
-                self.registers[REG_VF] = (y > x) as u8;
                 self.registers[reg_x as usize] = y.wrapping_sub(x);
+                self.registers[REG_VF] = (y >= x) as u8;
             }
             Instruction::Shl(reg_x, reg_y) => {
-                let le_bit = self.registers[reg_y as usize] & 1;
-                self.registers[REG_VF] = le_bit;
-                self.registers[reg_x as usize] = self.registers[reg_y as usize] << 1;
+                let y = self.registers[reg_y as usize];
+                self.registers[reg_x as usize] = y << 1;
+                self.registers[REG_VF] = (y >> 7) & 1;
             }
             Instruction::SneVxVy(reg_x, reg_y) => {
                 if self.registers[reg_x as usize] != self.registers[reg_y as usize] {
