@@ -205,13 +205,16 @@ impl Interpreter {
                 self.registers[reg_x as usize] = self.registers[reg_y as usize]
             }
             Instruction::Or(reg_x, reg_y) => {
-                self.registers[reg_x as usize] |= self.registers[reg_y as usize]
+                self.registers[reg_x as usize] |= self.registers[reg_y as usize];
+                self.registers[REG_VF] = 0;
             }
             Instruction::And(reg_x, reg_y) => {
-                self.registers[reg_x as usize] &= self.registers[reg_y as usize]
+                self.registers[reg_x as usize] &= self.registers[reg_y as usize];
+                self.registers[REG_VF] = 0;
             }
             Instruction::Xor(reg_x, reg_y) => {
-                self.registers[reg_x as usize] ^= self.registers[reg_y as usize]
+                self.registers[reg_x as usize] ^= self.registers[reg_y as usize];
+                self.registers[REG_VF] = 0;
             }
             Instruction::AddVxVy(reg_x, reg_y) => {
                 let res = (self.registers[reg_x as usize] as u16)
