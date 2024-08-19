@@ -114,9 +114,12 @@ impl Interpreter {
             self.execute_instruction(instruction)?;
 
             // decrement timer registers
-            if timer_clock.elapsed() >= timer_cycle {
-                self.timer_register = self.timer_register.saturating_sub(1);
-                self.sound_register = self.sound_register.saturating_sub(1);
+            let elapsed = timer_clock.elapsed();
+            if elapsed >= timer_cycle {
+                // timing registers are not affected by interupts (e.g. waiting for a keypress)
+                let elapsed_cycles = (elapsed.as_secs_f64() / timer_cycle.as_secs_f64()) as u8;
+                self.timer_register = self.timer_register.saturating_sub(elapsed_cycles);
+                self.sound_register = self.sound_register.saturating_sub(elapsed_cycles);
                 self.window.control_sound(self.sound_register > 0);
                 timer_clock = Instant::now();
             }
