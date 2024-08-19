@@ -56,6 +56,7 @@ pub struct Window {
     frame_buffer: Arc<RwLock<[u64; Self::HEIGHT]>>,
     sender: Option<std::sync::mpsc::Sender<WindowCommand>>,
     receiver: Option<std::sync::mpsc::Receiver<u8>>,
+    thread: Option<std::thread::JoinHandle<()>>,
 }
 impl Window {
     pub fn new(frame_buffer: Arc<RwLock<[u64; Self::HEIGHT]>>) -> Self {
@@ -63,6 +64,7 @@ impl Window {
             frame_buffer,
             sender: None,
             receiver: None,
+            thread: None,
         }
     }
 
@@ -165,13 +167,20 @@ impl Window {
         let _ = sender.send(WindowCommand::ControlSound(playing));
     }
 
+    /// Checks if the window is still open
+    pub fn is_open(&self) -> bool {
+        self.thread
+            .as_ref()
+            .is_some_and(|handle| !handle.is_finished())
+    }
+
     pub fn spawn(&mut self) {
         let (tx, rx) = std::sync::mpsc::channel::<WindowCommand>();
         let (respond_tx, respond_rx) = std::sync::mpsc::channel::<u8>();
         self.sender.replace(tx);
         self.receiver.replace(respond_rx);
         let frame_buffer = Arc::clone(&self.frame_buffer);
-        std::thread::spawn(move || {
+        self.thread.replace(std::thread::spawn(move || {
             let sdl_context = sdl2::init().unwrap();
             let video_subsystem = sdl_context.video().unwrap();
             let audio_subsystem = sdl_context.audio().unwrap();
@@ -258,7 +267,7 @@ impl Window {
                     }
                 }
             }
-        });
+        }));
     }
 
     /// Draws the screen based on the cucrrent [`Self::frame_buffer`].

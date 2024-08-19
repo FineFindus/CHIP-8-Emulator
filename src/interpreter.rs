@@ -96,6 +96,9 @@ impl Interpreter {
         let mut timer_clock = Instant::now();
 
         loop {
+            if !self.window.is_open() {
+                return Ok(());
+            }
             // fetch next instruction
             let instruction_bytes = self
                 .read_u16(self.program_counter as usize)
