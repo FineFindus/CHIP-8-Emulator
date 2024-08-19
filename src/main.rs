@@ -15,7 +15,13 @@ fn main() -> ExitCode {
 
     let mut interpreter = Interpreter::new(rom_file);
     interpreter.execute().expect("Failed to run ROM");
-    // interpreter.dump_memory();
+
+    if std::env::args()
+        .nth(2)
+        .is_some_and(|arg| arg == "--dump-memory")
+    {
+        interpreter.dump_memory();
+    }
 
     ExitCode::SUCCESS
 }
