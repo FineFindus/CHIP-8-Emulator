@@ -1,6 +1,5 @@
 use std::{
     sync::{Arc, RwLock},
-    thread::JoinHandle,
     time::Duration,
 };
 
