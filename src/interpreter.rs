@@ -102,7 +102,8 @@ impl Interpreter {
                 .unwrap_or_default();
             if instruction_bytes == 0 {
                 // likely found last instruction
-                return Ok(());
+                std::thread::yield_now();
+                continue;
             }
 
             let instruction = Instruction::try_from(instruction_bytes)?;
