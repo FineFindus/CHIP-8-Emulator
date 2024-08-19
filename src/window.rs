@@ -107,20 +107,14 @@ impl Window {
     /// Queues a call.
     /// This causes the window contents to be redrawn, based on the [`Self::frame_buffer`].
     pub fn queue_draw(&self) {
-        let Some(sender) = self.sender.as_ref() else {
-            return;
-        };
-        let _ = sender.send(WindowCommand::Draw);
+        self.send_command(WindowCommand::Draw);
         // due to waiting for an interupt, the CHIP-8 is limited to 60 fps
         std::thread::sleep(Duration::from_secs_f64(1.0 / 60.0));
     }
 
     /// Clears the current screen.
     pub fn clear(&self) {
-        let Some(sender) = self.sender.as_ref() else {
-            return;
-        };
-        let _ = sender.send(WindowCommand::Clear);
+        self.send_command(WindowCommand::Clear);
         // reset the frame_buffer to 0
         let mut frame_buffer = self.frame_buffer.write().unwrap();
         frame_buffer.fill(0);
@@ -128,10 +122,7 @@ impl Window {
 
     /// Checks if the given key is pressed.
     pub fn is_key_pressed(&mut self, key: u8) -> bool {
-        let Some(sender) = self.sender.as_ref() else {
-            return false;
-        };
-        sender.send(WindowCommand::IsPressed(key)).unwrap();
+        self.send_command(WindowCommand::IsPressed(key));
         match self.receiver.as_ref().unwrap().recv() {
             Ok(val) => val != 0,
             Err(_) => {
@@ -143,11 +134,7 @@ impl Window {
 
     /// Checks if the given key is pressed.
     pub fn wait_for_key_press(&mut self) -> u8 {
-        self.sender
-            .as_ref()
-            .unwrap()
-            .send(WindowCommand::WaitKeyPress)
-            .unwrap();
+        self.send_command(WindowCommand::WaitKeyPress);
         match self.receiver.as_ref().unwrap().recv() {
             Ok(val) => val,
             Err(_) => {
@@ -161,10 +148,7 @@ impl Window {
     ///
     /// If `playing` is set to `true`, a constant beep is emitted.
     pub fn control_sound(&self, playing: bool) {
-        let Some(sender) = self.sender.as_ref() else {
-            return;
-        };
-        let _ = sender.send(WindowCommand::ControlSound(playing));
+        self.send_command(WindowCommand::ControlSound(playing))
     }
 
     /// Checks if the window is still open
@@ -172,6 +156,14 @@ impl Window {
         self.thread
             .as_ref()
             .is_some_and(|handle| !handle.is_finished())
+    }
+
+    /// Sends a [`WindowCommand`] to the window thread.
+    fn send_command(&self, cmd: WindowCommand) {
+        let Some(sender) = self.sender.as_ref() else {
+            return;
+        };
+        let _ = sender.send(cmd);
     }
 
     pub fn spawn(&mut self) {
