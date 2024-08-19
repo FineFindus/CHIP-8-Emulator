@@ -249,9 +249,10 @@ impl Window {
                             scancode: Some(key),
                             ..
                         } if wait_for_key => {
-                            respond_tx
-                                .send(Self::map_scancode(key))
-                                .expect("Failed to send keycode");
+                            if let Some(mapped_key) = Self::map_scancode(key) {
+                                respond_tx.send(mapped_key).expect("Failed to send keycode");
+                                wait_for_key = false;
+                            }
                         }
                         _ => {}
                     }
@@ -300,8 +301,8 @@ impl Window {
     /// +-+-+-+-+    +-+-+-+-+
     /// |A|0|B|F|    |Z|X|C|V|
     /// +-+-+-+-+    +-+-+-+-+
-    fn map_scancode(key: Scancode) -> u8 {
-        match key {
+    fn map_scancode(key: Scancode) -> Option<u8> {
+        Some(match key {
             Scancode::Num1 => 0x1,
             Scancode::Num2 => 0x2,
             Scancode::Num3 => 0x3,
@@ -318,8 +319,8 @@ impl Window {
             Scancode::X => 0x0,
             Scancode::C => 0xB,
             Scancode::V => 0xF,
-            _ => 0,
-        }
+            _ => return None,
+        })
     }
 
     /// Maps a CHIP-8 key to a physical scancode.
@@ -353,7 +354,7 @@ impl Window {
             0x0 => Scancode::X,
             0xB => Scancode::C,
             0xF => Scancode::V,
-            _ => Scancode::X,
+            _ => unreachable!("Trying to map invalid key {key}"),
         }
     }
 }
