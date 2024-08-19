@@ -11,7 +11,7 @@ use crate::{instruction::Instruction, window::Window};
 const RAM_SIZE: usize = 0x1000;
 
 /// Start of the program.
-/// The bytes beofre are traditionally taken up by the interpreter
+/// The bytes before are traditionally taken up by the interpreter
 const PROGRAM_START: usize = 0x200;
 
 /// VF register.
@@ -31,7 +31,7 @@ pub struct Interpreter {
     /// VF should not be accessed by the program.
     registers: [u8; 16],
     /// 16-bit register.
-    /// Usually holds memory adresses.
+    /// Usually holds memory addresses.
     address_register: u16,
     /// Special sound register.
     ///
@@ -48,7 +48,7 @@ pub struct Interpreter {
     stack_pointer: u8,
     /// Stack
     ///
-    /// Stores the adresses that should be returned to once finished with a subroutine.
+    /// Stores the addresses that should be returned to once finished with a subroutine.
     stack: [u16; 16],
     /// Fame Buffer of the current window.
     ///
@@ -78,7 +78,7 @@ impl Interpreter {
             frame_buffer,
         };
 
-        // write font bytes into interpreter meory
+        // write font bytes into interpreter memory
         for (idx, digit) in Window::DIGITS.iter().enumerate() {
             interpreter.write_bytes(idx * digit.len(), digit);
         }
@@ -120,7 +120,7 @@ impl Interpreter {
             // decrement timer registers
             let elapsed = timer_clock.elapsed();
             if elapsed >= timer_cycle {
-                // timing registers are not affected by interupts (e.g. waiting for a keypress)
+                // timing registers are not affected by interrupts (e.g. waiting for a keypress)
                 let elapsed_cycles = (elapsed.as_secs_f64() / timer_cycle.as_secs_f64()) as u8;
                 self.timer_register = self.timer_register.saturating_sub(elapsed_cycles);
                 self.sound_register = self.sound_register.saturating_sub(elapsed_cycles);

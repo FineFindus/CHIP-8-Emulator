@@ -108,7 +108,7 @@ impl Window {
     /// This causes the window contents to be redrawn, based on the [`Self::frame_buffer`].
     pub fn queue_draw(&self) {
         self.send_command(WindowCommand::Draw);
-        // due to waiting for an interupt, the CHIP-8 is limited to 60 fps
+        // due to waiting for an interrupt, the CHIP-8 is limited to 60 fps
         std::thread::sleep(Duration::from_secs_f64(1.0 / 60.0));
     }
 
@@ -126,7 +126,7 @@ impl Window {
         match self.receiver.as_ref().unwrap().recv() {
             Ok(val) => val != 0,
             Err(_) => {
-                eprintln!("Failed to receive reponse");
+                eprintln!("Failed to receive response");
                 false
             }
         }
@@ -138,7 +138,7 @@ impl Window {
         match self.receiver.as_ref().unwrap().recv() {
             Ok(val) => val,
             Err(_) => {
-                eprintln!("Failed to receive reponse");
+                eprintln!("Failed to receive response");
                 0
             }
         }
