@@ -245,7 +245,7 @@ impl Window {
                 for event in event_pump.poll_iter() {
                     match event {
                         Event::Quit { .. } => return,
-                        Event::KeyDown {
+                        Event::KeyUp {
                             scancode: Some(key),
                             ..
                         } if wait_for_key => {
